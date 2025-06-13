@@ -1,0 +1,67 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm, uniform
+import seaborn as sns
+
+# Параметры эксперимента
+np.random.seed(42)  # Фиксируем случайность для воспроизводимости
+n_experiments = 1000  # Увеличим выборку для лучшей точности
+n_dice = 5           # Количество кубиков в одном эксперименте
+n_bins = 20          # Количество столбцов гистограммы
+
+# 1. Моделирование экспериментов
+experiments = np.random.randint(1, 7, size=(n_experiments, n_dice))
+means = np.mean(experiments, axis=1)
+
+# 2. Расчет статистик
+mu = np.mean(means)
+sigma = np.std(means, ddof=1)
+sem = sigma / np.sqrt(n_experiments)
+conf_interval = norm.interval(0.95, loc=mu, scale=sem)
+
+# 3. Теоретические параметры
+mu_theory = 3.5
+var_single_die = 35/12  # Дисперсия одного кубика (E[X²]-E[X]² = 91/6 - 3.5²)
+sigma_theory = np.sqrt(var_single_die / n_dice)
+
+# 4. Сравнение с равномерным распределением
+uniform_samples = np.random.uniform(1, 6, size=n_experiments)
+uniform_means = np.mean(np.random.uniform(1, 6, size=(n_experiments, n_dice)), axis=1)
+
+# 5. Построение графиков
+plt.figure(figsize=(14, 8))
+x = np.linspace(1, 6, 1000)
+
+# Гистограмма экспериментальных данных
+sns.histplot(means, bins=n_bins, kde=False, stat='density',
+             color='skyblue', alpha=0.7, label='Экспериментальные данные')
+
+# Теоретическая нормальная кривая
+plt.plot(x, norm.pdf(x, mu_theory, sigma_theory),
+         'r-', linewidth=2, label=f'Теория: N({mu_theory:.1f}, {sigma_theory:.3f}²)')
+
+# Гистограмма равномерного распределения (для сравнения)
+sns.histplot(uniform_means, bins=n_bins, kde=False, stat='density',
+             color='green', alpha=0.3, label='Равномерное распределение')
+
+# Настройки графика
+plt.title(f'Распределение среднего значения {n_dice} кубиков\n'
+          f'Среднее = {mu:.3f}, СКО = {sigma:.3f}\n'
+          f'95% ДИ = [{conf_interval[0]:.3f}, {conf_interval[1]:.3f}]\n'
+          f'Дисперсия: {sigma2**:.3f} (эксп.) vs {sigma_theory2**:.3f} (теор.)',
+          pad=20)
+
+plt.xlabel('Среднее значение бросков')
+plt.ylabel('Плотность вероятности')
+plt.grid(alpha=0.3)
+plt.legend()
+plt.tight_layout()
+
+# Дополнительный график QQ-plot для проверки нормальности
+plt.figure(figsize=(8, 6))
+stats.probplot(means, dist="norm", plot=plt)
+plt.title('QQ-plot для проверки нормальности распределения')
+plt.grid(alpha=0.3)
+plt.tight_layout()
+
+plt.show()
